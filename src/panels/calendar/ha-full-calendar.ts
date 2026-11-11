@@ -27,6 +27,7 @@ import { firstWeekdayIndex } from "../../common/datetime/first_weekday";
 import { resolveTimeZone } from "../../common/datetime/resolve-time-zone";
 import { useAmPm } from "../../common/datetime/use_am_pm";
 import { fireEvent } from "../../common/dom/fire_event";
+import { computeStateDomain } from "../../common/entity/compute_state_domain";
 import { supportsFeature } from "../../common/entity/supports-feature";
 import type { LocalizeFunc } from "../../common/translations/localize";
 import "../../components/ha-button";
@@ -508,6 +509,13 @@ export class HAFullCalendar extends LitElement {
     const canDelete =
       entityStateObj &&
       supportsFeature(entityStateObj, CalendarEntityFeature.DELETE_EVENT);
+    // A duplicate can go to any calendar that accepts new events, so events
+    // of read-only calendars can be copied too
+    const canDuplicate = Object.values(this.hass.states).some(
+      (stateObj) =>
+        computeStateDomain(stateObj) === "calendar" &&
+        supportsFeature(stateObj, CalendarEntityFeature.CREATE_EVENT)
+    );
     showCalendarEventDetailDialog(this, {
       calendarId: info.event.extendedProps.calendar,
       entry: info.event.extendedProps.eventData,
@@ -517,6 +525,7 @@ export class HAFullCalendar extends LitElement {
       },
       canEdit: canEdit,
       canDelete: canDelete,
+      canDuplicate: canDuplicate,
     });
   }
 

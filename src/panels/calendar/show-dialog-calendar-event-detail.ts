@@ -6,6 +6,7 @@ export interface CalendarEventDetailDialogParams {
   entry: CalendarEventData;
   canDelete?: boolean;
   canEdit?: boolean;
+  canDuplicate?: boolean;
   updated: () => void;
   color?: string;
 }

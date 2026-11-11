@@ -114,8 +114,9 @@ class DialogCalendarEventEditor extends DirtyStateProviderMixin<CalendarEventFor
       this.hass.locale.time_zone,
       this.hass.config.time_zone
     );
-    if (params.entry) {
-      const entry = params.entry!;
+    // An event to edit, or the values of an event to duplicate
+    const entry = params.entry || params.duplicate;
+    if (entry) {
       this._allDay = isDate(entry.dtstart);
       this._summary = entry.summary;
       this._description = entry.description;
@@ -167,6 +168,7 @@ class DialogCalendarEventEditor extends DirtyStateProviderMixin<CalendarEventFor
       return nothing;
     }
     const isCreate = this._params.entry === undefined;
+    const isDuplicate = isCreate && this._params.duplicate !== undefined;
 
     const { startDate, startTime, endDate, endTime } = this._getLocaleStrings(
       this._dtstart,
@@ -177,7 +179,11 @@ class DialogCalendarEventEditor extends DirtyStateProviderMixin<CalendarEventFor
       <ha-dialog
         .open=${this._open}
         header-title=${this.hass.localize(
-          `ui.components.calendar.event.${isCreate ? "add" : "edit"}`
+          isDuplicate
+            ? "ui.components.calendar.event.duplicate"
+            : isCreate
+              ? "ui.components.calendar.event.add"
+              : "ui.components.calendar.event.edit"
         )}
         .preventScrimClose=${this.isDirtyState}
         @closed=${this._dialogClosed}
@@ -308,7 +314,9 @@ class DialogCalendarEventEditor extends DirtyStateProviderMixin<CalendarEventFor
                   <ha-button
                     slot="primaryAction"
                     @click=${this._createEvent}
-                    .disabled=${this._submitting || !this.isDirtyState}
+                    .disabled=${
+                      this._submitting || (!this.isDirtyState && !isDuplicate)
+                    }
                   >
                     ${this.hass.localize("ui.components.calendar.event.add")}
                   </ha-button>

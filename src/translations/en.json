@@ -1456,6 +1456,7 @@
         "event": {
           "add": "Add event",
           "delete": "Delete event",
+          "duplicate": "Duplicate event",
           "edit": "Edit event",
           "save": "Save event",
           "all_day": "All day",

@@ -8,6 +8,7 @@ import { formatDate } from "../../common/datetime/format_date";
 import { formatDateTime } from "../../common/datetime/format_date_time";
 import { formatTime } from "../../common/datetime/format_time";
 import { fireEvent } from "../../common/dom/fire_event";
+import { supportsFeature } from "../../common/entity/supports-feature";
 import { isDate } from "../../common/string/is_date";
 import "../../components/entity/state-info";
 import "../../components/ha-alert";
@@ -15,7 +16,10 @@ import "../../components/ha-button";
 import "../../components/ha-dialog-footer";
 import "../../components/ha-dialog";
 import type { CalendarEventMutableParams } from "../../data/calendar";
-import { deleteCalendarEvent } from "../../data/calendar";
+import {
+  CalendarEntityFeature,
+  deleteCalendarEvent,
+} from "../../data/calendar";
 import { haStyleDialog } from "../../resources/styles";
 import type { HomeAssistant } from "../../types";
 import { renderRRuleAsText } from "./recurrence";
@@ -130,6 +134,18 @@ class DialogCalendarEventDetail extends LitElement {
               : ""
           }
           ${
+            this._params.canDuplicate
+              ? html`<ha-button
+                  slot="secondaryAction"
+                  appearance="plain"
+                  @click=${this._duplicateEvent}
+                  .disabled=${this._submitting}
+                >
+                  ${this.hass.localize("ui.components.calendar.event.duplicate")}
+                </ha-button>`
+              : ""
+          }
+          ${
             this._params.canEdit
               ? html`<ha-button
                   slot="primaryAction"
@@ -212,6 +228,26 @@ class DialogCalendarEventDetail extends LitElement {
 
   private async _editEvent() {
     showCalendarEventEditDialog(this, this._params!);
+    this.closeDialog();
+  }
+
+  private _duplicateEvent() {
+    // Only the event's values are copied: a duplicate is a new event, not
+    // another occurrence of this one, so uid and recurrence_id stay behind.
+    const { summary, dtstart, dtend, rrule, description, location } =
+      this._params!.entry;
+    const stateObj = this.hass.states[this._calendarId!];
+    showCalendarEventEditDialog(this, {
+      // Keep the event's calendar when new events can be created in it,
+      // otherwise the editor picks a calendar that can
+      calendarId:
+        stateObj &&
+        supportsFeature(stateObj, CalendarEntityFeature.CREATE_EVENT)
+          ? this._calendarId
+          : undefined,
+      duplicate: { summary, dtstart, dtend, rrule, description, location },
+      updated: this._params!.updated,
+    });
     this.closeDialog();
   }
 
